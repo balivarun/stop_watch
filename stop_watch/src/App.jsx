@@ -1,35 +1,76 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useRef, useEffect } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+const Timer = () => {
+  const [totalTime, setTotalTime] = useState(0); // in seconds
+  const [currentTime, setCurrentTime] = useState(0);
+  const [inputMinutes, setInputMinutes] = useState(""); // string input from user
+  const intervalRef = useRef(null);
+
+  // Update totalTime when the input changes and Start is pressed
+  const initTimer = () => {
+    const parsedTime = parseFloat(inputMinutes);
+    if (!isNaN(parsedTime) && parsedTime > 0) {
+      const seconds = parsedTime * 60;
+      setTotalTime(seconds);
+      setCurrentTime(0);
+    }
+  };
+
+  // Update UI via state, so React handles this
+
+  const breakTimer = () => {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  };
+
+  const resetTimer = () => {
+    breakTimer();
+    setInputMinutes("");
+    setTotalTime(0);
+    setCurrentTime(0);
+  };
+
+  const startTimer = () => {
+    initTimer();
+  };
+
+  // Timer logic
+  useEffect(() => {
+    if (currentTime === 0 || currentTime >= totalTime) return;
+
+    intervalRef.current = setInterval(() => {
+      setCurrentTime((prevTime) => {
+        if (prevTime + 1 >= totalTime) {
+          clearInterval(intervalRef.current);
+          return totalTime;
+        }
+        return prevTime + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalRef.current);
+  }, [totalTime]);
+
+  const pauseTimer = () => {
+    breakTimer();
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p> 
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="timer">
+      <input
+        type="number"
+        placeholder="Enter minutes"
+        value={inputMinutes}
+        onChange={(e) => setInputMinutes(e.target.value)}
+      />
+      <progress value={currentTime} max={totalTime}></progress>
+      <p>Time Left: {Math.max(totalTime - currentTime, 0)} seconds</p>
 
-export default App
+      <button onClick={startTimer}>Start</button>
+      <button onClick={pauseTimer}>Pause</button>
+      <button onClick={resetTimer}>Reset</button>
+    </div>
+  );
+};
+
+export default Timer;
